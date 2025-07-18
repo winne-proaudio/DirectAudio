@@ -2,12 +2,12 @@ using System.IO;
 
     public static class AudioPlayer
     {
-        public static void PlayTone()
+        public static void PlayTone(float freq)
         {
             using (var player = new CrossPlatformAudioPlayer())
             {
                 // Generiere einen 1-Sekunden 440Hz Ton
-                float[] audioData = GenerateTone(440, 1.0f, 44100);
+                float[] audioData = GenerateTone(freq, 0.5f, 44100);
                 player.PlayRawAudio(audioData);
                 player.WaitForPlaybackComplete();
             }

@@ -1,5 +1,4 @@
 using OpenTK.Audio.OpenAL;
-using System;
 
 public class CrossPlatformAudioPlayer : IDisposable
 {
@@ -12,37 +11,17 @@ public class CrossPlatformAudioPlayer : IDisposable
 
     public CrossPlatformAudioPlayer()
     {
-        try
-        {
-            // Initialisiere OpenAL mit dem Standard-Audiogerät
-            string defaultDeviceName = ALC.GetString(ALDevice.Null, AlcGetString.DefaultDeviceSpecifier);
-            device = ALC.OpenDevice(defaultDeviceName);
-            
-            if (device == ALDevice.Null)
-                throw new Exception("Konnte kein Audio-Gerät öffnen");
+        device = ALC.OpenDevice(null);
+        if (device == ALDevice.Null)
+            throw new Exception("Konnte kein Audio-Gerät öffnen");
 
-            // Erstelle Audio-Kontext
-            context = ALC.CreateContext(device, new ALContextAttributes());
-            if (context == ALContext.Null)
-                throw new Exception("Konnte keinen Audio-Kontext erstellen");
+        context = ALC.CreateContext(device, (int[])null);
+        ALC.MakeContextCurrent(context);
 
-            ALC.MakeContextCurrent(context);
+        buffer = AL.GenBuffer();
+        source = AL.GenSource();
 
-            // Erstelle Source und Buffer
-            buffer = AL.GenBuffer();
-            source = AL.GenSource();
-            
-            AL.Source(source, ALSourcef.Gain, 1.0f);           // Lautstärke
-            AL.Source(source, ALSourcef.Pitch, 1.0f);          // Tonhöhe
-            AL.Source(source, ALSource3f.Position, 0, 0, 0);   // Position (Stereo-Mitte)
-            
-            initialized = true;
-        }
-        catch (Exception)
-        {
-            Dispose();
-            throw;
-        }
+        initialized = true;
     }
 
     public void PlayRawAudio(float[] audioData)
@@ -50,53 +29,49 @@ public class CrossPlatformAudioPlayer : IDisposable
         if (!initialized)
             throw new InvalidOperationException("Audio nicht initialisiert");
 
-        try
+        // Stoppe aktuelle Wiedergabe
+        AL.SourceStop(source);
+        
+        // Warte bis die vorherige Wiedergabe beendet ist
+        AL.GetSource(source, ALGetSourcei.SourceState, out int state);
+        while (state == (int)ALSourceState.Playing)
         {
-            // Stoppe vorherige Wiedergabe
-            AL.SourceStop(source);
-            
-            // Konvertiere zu 16-bit PCM
-            short[] pcmData = new short[audioData.Length];
-            for (int i = 0; i < audioData.Length; i++)
-            {
-                // Begrenze die Amplitude auf [-1.0, 1.0]
-                float sample = Math.Clamp(audioData[i], -1.0f, 1.0f);
-                pcmData[i] = (short)(sample * short.MaxValue);
-            }
-
-            byte[] byteData = new byte[pcmData.Length * sizeof(short)];
-            Buffer.BlockCopy(pcmData, 0, byteData, 0, byteData.Length);
-
-            // Lade Audio-Daten in den Buffer
-            AL.BufferData(buffer, ALFormat.Stereo16, byteData, DEFAULT_SAMPLE_RATE);
-            
-            // Verknüpfe Buffer mit Source und spiele ab
-            AL.Source(source, ALSourcei.Buffer, buffer);
-            
-            // Überprüfe auf Fehler
-            ALError error = AL.GetError();
-            if (error != ALError.NoError)
-                throw new Exception($"OpenAL Fehler: {error}");
-
-            AL.SourcePlay(source);
+            Thread.Sleep(10);
+            AL.GetSource(source, ALGetSourcei.SourceState, out state);
         }
-        catch (Exception)
+
+        // Entferne den alten Buffer
+        AL.Source(source, ALSourcei.Buffer, 0);
+
+        // Konvertiere zu 16-bit PCM
+        var byteData = new byte[audioData.Length * 2];
+        for (int i = 0; i < audioData.Length; i++)
         {
-            AL.SourceStop(source);
-            throw;
+            short value = (short)(audioData[i] * short.MaxValue);
+            byte[] bytes = BitConverter.GetBytes(value);
+            byteData[i * 2] = bytes[0];
+            byteData[i * 2 + 1] = bytes[1];
         }
+
+        // Lade neue Audiodaten
+        AL.BufferData(buffer, ALFormat.Stereo16, byteData, DEFAULT_SAMPLE_RATE);
+        
+        // Verknüpfe Buffer mit Source
+        AL.Source(source, ALSourcei.Buffer, buffer);
+        
+        // Spiele ab
+        AL.SourcePlay(source);
     }
 
     public void WaitForPlaybackComplete()
     {
         if (!initialized) return;
 
-        while (true)
+        AL.GetSource(source, ALGetSourcei.SourceState, out int state);
+        while (state == (int)ALSourceState.Playing)
         {
-            AL.GetSource(source, ALGetSourcei.SourceState, out int state);
-            if (state != (int)ALSourceState.Playing)
-                break;
             Thread.Sleep(10);
+            AL.GetSource(source, ALGetSourcei.SourceState, out state);
         }
     }
 
@@ -108,10 +83,8 @@ public class CrossPlatformAudioPlayer : IDisposable
             AL.DeleteSource(source);
             AL.DeleteBuffer(buffer);
             ALC.MakeContextCurrent(ALContext.Null);
-            if (context != ALContext.Null)
-                ALC.DestroyContext(context);
-            if (device != ALDevice.Null)
-                ALC.CloseDevice(device);
+            ALC.DestroyContext(context);
+            ALC.CloseDevice(device);
             initialized = false;
         }
     }

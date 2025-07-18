@@ -87,3 +87,4 @@ D:\GitLab\DirectAudio\DirectAudio\bin\Debug\net9.0-windows\runtimes\win-x64\nati
 D:\GitLab\DirectAudio\DirectAudio\bin\Debug\net9.0-windows\runtimes\win-x86\native\OpenAL32.dll
 D:\GitLab\DirectAudio\DirectAudio\bin\Debug\net9.0-windows\runtimes\win-x86\native\OpenAL32.lib
 D:\GitLab\DirectAudio\DirectAudio\bin\Debug\net9.0-windows\runtimes\win-x86\native\soft_oal.dll
+D:\GitLab\DirectAudio\DirectAudio\obj\Debug\net9.0-windows\DirectAudio.sourcelink.json
