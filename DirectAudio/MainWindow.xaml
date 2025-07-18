@@ -9,7 +9,7 @@
     <Grid>
         <Button Content="Ton abspielen" 
                 Click="PlayToneButton_Click"
-                Width="120" 
+                Width="150" 
                 Height="30"/>
 
 
