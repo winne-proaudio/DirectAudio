@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Avalonia" Version="11.3.2" />
+      <PackageReference Include="Avalonia.Desktop" Version="11.3.2" />
+      <PackageReference Include="Avalonia.Diagnostics" Version="11.3.2" />
+      <PackageReference Include="Avalonia.Skia" Version="11.3.2" />
+      <PackageReference Include="MVVMToolkitExtensions.WPF" Version="1.0.5" />
+        <PackageReference Include="OpenTK.Audio.OpenAL" Version="4.8.2" />
+        <PackageReference Include="OpenAL.Soft" Version="1.19.1" />
+
+    </ItemGroup>
+
+</Project>
